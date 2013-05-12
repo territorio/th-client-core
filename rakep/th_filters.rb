@@ -13,6 +13,24 @@ module Th
     "./app/submodules/"
   end
 
+
+
+  class EmberStub < Rake::Pipeline::Filter
+    def generate_output(inputs, output)
+      inputs.each do |input|
+        file = File.read(input.fullpath)
+        out = "(function() {\nvar Ember = { assert: function() {} };\n"
+
+        out << file
+        out << "\nexports.precompile = Ember.Handlebars.precompile;"
+        out << "\nexports.EmberHandlebars = Ember.Handlebars;"
+        out << "\n})();"
+        output.write out
+      end
+    end
+  end
+
+
 class AddMicroLoader < Rake::Pipeline::Filter
   LOADER = File.expand_path( "#{Th.submodule_path}ember.js/packages/loader/lib/main.js", __FILE__)
 
@@ -47,83 +65,96 @@ class LessFilter < Rake::Pipeline::Web::Filters::LessFilter
 
 end
 
-class HandlebarsPrecompiler < Rake::Pipeline::Filter
+
+
+class CustomHandlebarsPrecompiler < Rake::Pipeline::Filter
   class << self
     def context
-
       unless @context
-
         contents = <<END
-#{File.read("#{Th.submodule_path2}ember.js/packages/handlebars/lib/main.js")}
-#{File.read("#{Th.submodule_path2}th-client-core/vendor/precompile/ember-runtime.js")}
-#{File.read("#{Th.submodule_path2}ember.js/packages/ember-handlebars-compiler/lib/main.js")}
+exports = {};
+function require() {
+  #{File.read("#{Th.submodule_path2}th-client-core/vendor/precompile/handlebars.1.0.0-rc.3.js")};
+  return Handlebars;
+}
+
+#{File.read("dist/ember-template-compiler.js")}
 function precompileEmberHandlebars(string) {
-  return Ember.Handlebars.precompile(string).toString();
+  return exports.precompile(string).toString();
 }
 END
-
         @context = ExecJS.compile(contents)
-
       end
       @context
     end
-
   end
 
-  def precompile_templates(name, data)
+  def initialize(options={}, &block)
+    super(&block)
+    @inline = options[:inline]
+    @base_path = options[:base_path]
+  end
+
+  def precompile_inline_templates(data)
+     data.gsub!(%r{(defaultTemplate(?:\s*=|:)\s*)precompileTemplate\(['"](.*)['"]\)}) do
+       "#{$1}Ember.Handlebars.template(#{self.class.context.call("precompileEmberHandlebars", $2)})"
+     end
+  end
+
+  def precompile_hbs_templates(name, data)
    "\nEmber.TEMPLATES['#{name}'] = Ember.Handlebars.template(#{self.class.context.call("precompileEmberHandlebars", data)});\n"
   end
 
   def generate_output(inputs, output)
 
     inputs.each do |input|
+      result = File.read(input.fullpath)
+      if @inline 
+        precompile_inline_templates(result)
+      else 
 
-      name = File.basename(input.path, '.hbs')
-      data = File.read(input.fullpath)
-      result = precompile_templates(name, data)
+        name = File.basename(input.path, '.hbs')
+
+      #name = File.basename(input.path, '.hbs')
+      #data = File.read(input.fullpath)
+      #result = precompile_templates(name, data)
+        
+        #name = input.path.dup
+        #name.slice!(@base_path)
+        #name.slice! ".hbs"
+        result = precompile_hbs_templates(name, result)
+      end
       output.write result
-
     end
   end
 end
 
-class InternalHandlebarsPrecompiler < Rake::Pipeline::Filter
-  class << self
-    def context
 
-      unless @context
+class AddHandlebarsDependencies < Rake::Pipeline::Filter
 
-        contents = <<END
-#{File.read("#{Th.submodule_path2}ember.js/packages/handlebars/lib/main.js")}
-#{File.read("#{Th.submodule_path2}th-client-core/vendor/precompile/ember-runtime.js")}
-#{File.read("#{Th.submodule_path2}ember.js/packages/ember-handlebars-compiler/lib/main.js")}
-function precompileEmberHandlebars(string) {
-  return Ember.Handlebars.precompile(string).toString();
-}
+    def generate_output(inputs, output)
+
+					contents = <<END
+ minispade.require('rsvp');
+ minispade.require('container');
+ minispade.require('ember-debug');
+ minispade.require('ember-metal');
+ minispade.require('ember-runtime');
+ minispade.require('ember-application');
+ minispade.require('ember-views');
+ minispade.require('ember-states');
+ minispade.require('metamorph');
+ minispade.require('ember-handlebars');
 END
 
-        @context = ExecJS.compile(contents)
+      output.write contents
 
+      inputs.each do |input|
+        output.write input.read
       end
-      @context
-    end
 
-  end
+		end
 
-  def precompile_templates(data)
-    # Precompile defaultTemplates
-   data.gsub!(%r{(defaultTemplate(?:\s*=|:)\s*)precompileTemplate\(['"](.*)['"]\)}) do
-     "#{$1}Ember.Handlebars.template(#{self.class.context.call("precompileEmberHandlebars", $2)})"
-   end
-  end
-
-  def generate_output(inputs, output)
-    inputs.each do |input|
-      result = File.read(input.fullpath)
-      precompile_templates(result)
-      output.write result
-    end
-  end
 end
 
 
