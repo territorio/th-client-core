@@ -13,6 +13,16 @@ module Th
     "./app/submodules/"
   end
 
+  class EmberProductionFilter < Rake::Pipeline::Filter
+    def generate_output(inputs, output)
+      inputs.each do |input|
+        result = File.read(input.fullpath)
+        result.gsub!(%r{^(\s)+ember_(assert|deprecate|warn)\((.*)\).*$}, "")
+        output.write result
+      end
+    end
+  end
+
 
 
   class EmberStub < Rake::Pipeline::Filter
