@@ -1,13 +1,13 @@
 
 Th.Event.FIXTURES = [
-  {id: 1, title: "Porta Fidei", content: "Lugar: Monasterio de Santa Clara de Moguer Información: 959 372 193 <strong>Moguer</strong>", categories: [1, 2]},
-  {id: 2, title: "Porta Fidei 2", content: "Lugar: Monasterio de Santa Clara de Moguer Información: 959 372 193 <strong>Moguer</strong>", categories: [2, 3]},
+  {id: 1, title: "Porta Fidei This is a long title with two changes", place: "Huelva", content: "Lugar: Monasterio de Santa Clara de Moguer Información: 959 372 193 <strong>Moguer</strong>", categories: [1, 2]},
+  {id: 2, title: "Porta Fidei 2", place: "Aracena", content: "Lugar: Monasterio de Santa Clara de Moguer Información: 959 372 193 <strong>Moguer</strong>", categories: [2, 3]},
   {id: 3, title: "Porta Fidei 3", content: "Lugar: Monasterio de Santa Clara de Moguer Información: 959 372 193 <strong>Moguer</strong>", categories: [3]}
 ];
 
 
 Th.Category.FIXTURES = [
-  {id: 1, name: "Cine", slug: "cine"}, 
+  {id: 1, name: "Cine", slug: "cine", icon: "camera"}, 
   {id: 2, name: "Deportes-Competiciones", slug: "deporte"}, 
   {id: 3, name: "Exposiciones", slug: "exposicion"}, 
   {id: 4, name: "Fiestas-Tradiciones", slug: "tradicion"}, 
