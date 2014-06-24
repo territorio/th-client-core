@@ -1097,12 +1097,9 @@ Recognizer.prototype = {
 
         // is is enabled and allow recognizing?
         if (!canRecognize || !boolOrFn(this.options.enable, [this, inputDataClone])) {
-            console.log('RESET ' +this.manager.element.id + ' ' + this.options.event + inputData.eventType );
             this.reset();
             this.state = STATE_FAILED;
             return;
-        } else {
-            console.log('OK ' +this.manager.element.id + ' ' + this.options.event + inputData.eventType );
         }
 
         // reset when we've reached the end
@@ -1424,7 +1421,6 @@ inherit(SwipeRecognizer, AttrRecognizer, {
     },
 
     emit: function(input) {
-      console.log('emiting '+input.direction);
         this.manager.emit(this.options.event, input);
         this.manager.emit(this.options.event + input.direction, input);
     }
